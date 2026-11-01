@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets and local env
+.env
+.env.local
+voice/livekit/.env.local
+
+# Logs and runtime
+logs/
+*.log
+
+# Downloaded voice models
+voice/models/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store

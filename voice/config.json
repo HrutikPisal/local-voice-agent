@@ -1,0 +1,19 @@
+{
+  "sample_rate": 16000,
+  "vad_chunk_samples": 512,
+  "max_record_seconds": 30,
+  "vad_min_silence_ms": 500,
+  "vad_threshold": 0.5,
+  "speech_pad_ms": 150,
+  "audio_target_rms": 0.08,
+  "stt_model_size": "small",
+  "stt_language": "en",
+  "stt_compute_type": "int8",
+  "stt_beam_size": 5,
+  "stt_initial_prompt": "The user speaks short commands for a local CLI assistant. They may say their name, for example Hrutik.",
+  "stt_condition_on_previous_text": false,
+  "stt_vad_filter": false,
+  "piper_voice_id": "en_US-lessac-medium",
+  "piper_download_voice": "en_US-lessac-medium",
+  "ollama_num_predict": 400
+}

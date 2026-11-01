@@ -1,0 +1,2 @@
+# Current voice agent: speech-to-text only (see requirements-full.txt for LLM/TTS).
+-r requirements-stt.txt

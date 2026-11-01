@@ -1,0 +1,14 @@
+[
+  {
+    "path": "samples/hi.wav",
+    "expected_text": "Hi"
+  },
+  {
+    "path": "samples/name_hrutik.wav",
+    "expected_text": "Hi, I'm Hrutik"
+  },
+  {
+    "path": "samples/stop.wav",
+    "expected_text": "stop"
+  }
+]

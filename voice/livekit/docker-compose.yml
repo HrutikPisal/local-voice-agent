@@ -1,0 +1,14 @@
+# Self-hosted LiveKit (Apache 2.0) — local dev credentials: devkey / secret
+# Usage (from this directory): docker compose up -d
+
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"   # WebSocket (clients + agents)
+      - "7881:7881"   # HTTP / RTC TCP fallback
+      - "50000-50100:50000-50100/udp"  # WebRTC media
+    environment:
+      LIVEKIT_KEYS: "devkey: secret"
+    restart: unless-stopped

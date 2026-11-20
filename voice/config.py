@@ -78,6 +78,84 @@ def get_stt_vad_filter() -> bool:
     return bool(get_voice_setting("stt_vad_filter", False))
 
 
+def get_stt_engine() -> str:
+    return str(get_voice_setting("stt_engine", "faster_whisper"))
+
+
+def get_stt_cpu_threads() -> int | None:
+    val = get_voice_setting("stt_cpu_threads", None)
+    return int(val) if val is not None else None
+
+
+def get_stt_num_workers() -> int:
+    return int(get_voice_setting("stt_num_workers", 1))
+
+
+def get_stt_sherpa_model_dir() -> str | None:
+    val = get_voice_setting("stt_sherpa_model_dir", None)
+    return str(val) if val else None
+
+
+def get_stt_partial_enabled() -> bool:
+    return bool(get_voice_setting("stt_partial_enabled", True))
+
+
+def get_stt_partial_interval_sec() -> float:
+    return float(get_voice_setting("stt_partial_interval_sec", 0.85))
+
+
+def get_stt_partial_min_audio_sec() -> float:
+    return float(get_voice_setting("stt_partial_min_audio_sec", 0.6))
+
+
+def get_stt_partial_beam_size() -> int:
+    return int(get_voice_setting("stt_partial_beam_size", 1))
+
+
+def get_record_preroll_ms() -> int:
+    return int(get_voice_setting("record_preroll_ms", 300))
+
+
+def get_audio_highpass_enabled() -> bool:
+    return bool(get_voice_setting("audio_highpass_enabled", True))
+
+
+def get_audio_noise_suppress_enabled() -> bool:
+    return bool(get_voice_setting("audio_noise_suppress_enabled", False))
+
+
+def get_vad_adaptive_enabled() -> bool:
+    return bool(get_voice_setting("vad_adaptive_enabled", True))
+
+
+def get_vad_trailing_filler_ms() -> int:
+    return int(get_voice_setting("vad_trailing_filler_ms", 400))
+
+
+def get_confirm_auto_accept_enabled() -> bool:
+    return bool(get_voice_setting("confirm_auto_accept_enabled", False))
+
+
+def get_confirm_auto_accept_min_logprob() -> float:
+    return float(get_voice_setting("confirm_auto_accept_min_logprob", -0.35))
+
+
+def get_confirm_auto_accept_max_no_speech() -> float:
+    return float(get_voice_setting("confirm_auto_accept_max_no_speech", 0.35))
+
+
+def get_input_device() -> int | None:
+    val = get_voice_setting("input_device", None)
+    return int(val) if val is not None else None
+
+
+def set_input_device_override(device: int | None) -> None:
+    if device is None:
+        _VOICE.pop("input_device", None)
+    else:
+        _VOICE["input_device"] = device
+
+
 def get_speech_pad_ms() -> int:
     return int(get_voice_setting("speech_pad_ms", 150))
 

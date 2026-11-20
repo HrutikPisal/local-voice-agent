@@ -7,7 +7,7 @@ Built by [Hrutik Pisal](https://github.com/HrutikPisal). MIT License.
 ## Features
 
 - **Silero VAD** endpointing + optional manual stop (Ctrl+R on native Windows console)
-- **faster-whisper** STT with **cached** `small` model, beam search, and configurable initial prompt
+- **faster-whisper** STT with **cached** English model (`base.en` default), streaming **partials**, preload/warmup, and configurable initial prompt
 - **Audio prep** — trim silence padding, RMS normalize before decode
 - **Confirm/edit step** — security and ground truth before any downstream automation
 - **JSONL audit logs** — per-turn timings, STT confidence, edit rate
@@ -39,19 +39,21 @@ At the REPL:
 
 The banner shows the audit log path (`logs/voice_<DD_MM_YYYY>.txt`).
 
-Override Whisper size: `python -m voice --stt-model base` (lower RAM).
+Override Whisper size: `python -m voice --stt-model distil-small.en`. List mics: `python -m voice --list-devices`. Continuous mode: `python -m voice --continuous`.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  mic[Mic 16kHz]
+  mic[Mic pre-roll]
   vad[Silero VAD]
-  prep[Trim and normalize]
-  stt[faster-whisper cached]
+  prep[Trim normalize]
+  partial[Partial STT]
+  stt[Final STT]
   ui[Confirm edit]
   audit[JSONL audit log]
-  mic --> vad --> prep --> stt --> ui --> audit
+  mic --> vad --> prep --> partial --> ui
+  prep --> stt --> ui --> audit
 ```
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -94,6 +96,10 @@ Optional WER benchmark — add 16 kHz mono WAVs under `voice/tests/fixtures/samp
 
 ```bash
 python -m voice.benchmark_stt
+python -m voice.benchmark_engines
+```
+
+Fixture WAVs (Windows SAPI): `python -m voice.tools.build_stt_fixtures`
 ```
 
 ## Tests

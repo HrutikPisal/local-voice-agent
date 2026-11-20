@@ -1,0 +1,22 @@
+{
+  "hint_terms": [
+    "git",
+    "commit",
+    "push",
+    "pull",
+    "pytest",
+    "kubectl",
+    "docker",
+    "venv",
+    "async",
+    "stderr",
+    "stdout"
+  ],
+  "replacements": {
+    "get commit": "git commit",
+    "get push": "git push",
+    "get pull": "git pull",
+    "pie test": "pytest",
+    "pie tests": "pytest"
+  }
+}

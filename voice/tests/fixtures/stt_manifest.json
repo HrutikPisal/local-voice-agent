@@ -10,5 +10,13 @@
   {
     "path": "samples/stop.wav",
     "expected_text": "stop"
+  },
+  {
+    "path": "samples/git_commit.wav",
+    "expected_text": "git commit -m fix the voice agent"
+  },
+  {
+    "path": "samples/run_pytest.wav",
+    "expected_text": "run pytest on the voice tests"
   }
 ]

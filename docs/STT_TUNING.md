@@ -79,3 +79,48 @@ result, load_info = transcribe_with_metadata(audio, word_timestamps=True)
 Defaults to `False` (unchanged behaviour).  Enable for future features such as
 karaoke-style highlighting or per-word confidence gating.  No config.json key
 is needed; callers opt in at the call site.
+
+## Latency defaults (CPU)
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `stt_model_size` | `base.en` | English-only; use `distil-small.en` or `small.en` for accuracy |
+| `stt_beam_size` | `2` | Final decode; partials use `stt_partial_beam_size` |
+| `stt_cpu_threads` | `4` | CTranslate2 CPU threads |
+| `vad_min_silence_ms` | `400` | Adaptive endpoint may extend after fillers |
+| `record_preroll_ms` | `300` | Pre-roll so word onsets are not clipped |
+| `stt_partial_enabled` | `true` | Live partial transcript while speaking |
+
+CLI preload (default on): background model load + warm-up decode. Disable with `python -m voice --no-preload`.
+
+## Engines (`stt_engine`)
+
+| Value | When |
+| --- | --- |
+| `faster_whisper` | Default; install `requirements-stt.txt` |
+| `sherpa_onnx` | Set `stt_sherpa_model_dir` to a transducer model tree |
+| `moonshine_onnx` | `pip install moonshine-onnx`; set `stt_model_size` to `tiny` or `base` |
+
+Compare models: `python -m voice.benchmark_engines`
+
+## Hotwords
+
+Edit [config/hotwords.json](../config/hotwords.json) for post-STT replacements and extra prompt terms (git, pytest, etc.).
+
+## Confirm UX
+
+| Config | Default |
+| --- | --- |
+| `confirm_auto_accept_enabled` | `false` — set `true` for high-confidence skip |
+| `confirm_auto_accept_min_logprob` | `-0.35` |
+| `confirm_auto_accept_max_no_speech` | `0.35` |
+
+Transcript prompt commands: `.cancel`, `.rerecord`, `.append`
+
+## Baseline benchmark (fixtures)
+
+Generate WAVs (Windows): `python -m voice.tools.build_stt_fixtures`
+
+Run WER: `python -m voice.benchmark_stt`
+
+SAPI synthetic speech is a rough baseline; replace fixtures with your own 16 kHz mono recordings for production tuning.

@@ -12,6 +12,9 @@ env/
 .env.local
 voice/livekit/.env.local
 
+# STT fixture build temp
+voice/tests/fixtures/samples/_tmp/
+
 # Logs and runtime
 logs/
 *.log

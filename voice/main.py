@@ -92,6 +92,35 @@ def _record_with_optional_ctrl_r(manual_stop: threading.Event) -> None:
         threading.Event().wait(0.05)
 
 
+def _record_with_enter_stop(manual_stop: threading.Event) -> None:
+    """Universal cross-platform stop: pressing Enter (blank line) sets manual_stop.
+
+    Works in VSCode integrated terminal, Git Bash, and all POSIX shells where
+    msvcrt is unavailable or unreliable.
+    """
+    try:
+        sys.stdin.readline()
+    except Exception:
+        return
+    if not manual_stop.is_set():
+        manual_stop.set()
+        # The \n clears the spinner/volume line before the message.
+        print("\n[VOICE] Stopping recording (Enter)...", flush=True)
+
+
+def _show_recording_indicator(manual_stop: threading.Event) -> None:
+    """Print a spinner on a single terminal line until manual_stop or done."""
+    frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    idx = 0
+    while not manual_stop.is_set():
+        frame = frames[idx % len(frames)]
+        print(f"\r[● Recording... {frame}  Press Enter to stop ]  ", end="", flush=True)
+        idx += 1
+        threading.Event().wait(0.1)
+    # Clear the indicator line
+    print("\r" + " " * 55 + "\r", end="", flush=True)
+
+
 class CaptureResult:
     __slots__ = (
         "raw_text",
@@ -135,10 +164,26 @@ def capture_and_transcribe(stt_model: str | None) -> CaptureResult:
             daemon=True,
         ).start()
 
-    print("[VOICE] Recording... (Ctrl+R to stop on native Windows console)", flush=True)
+    # Cross-platform Enter-key stop (works in VSCode, Git Bash, etc.)
+    threading.Thread(
+        target=_record_with_enter_stop,
+        args=(manual_stop,),
+        daemon=True,
+    ).start()
+
+    # Spinner indicator so the user knows the mic is active
+    threading.Thread(
+        target=_show_recording_indicator,
+        args=(manual_stop,),
+        daemon=True,
+    ).start()
+
+    print("[VOICE] Recording... (press Enter or Ctrl+R to stop)", flush=True)
     telemetry = TurnTelemetry()
     telemetry.mark_record_start()
     audio = capture_utterance(manual_stop=manual_stop, cancel=cancel)
+    # Ensure spinner and Enter-reader threads see the stop signal
+    manual_stop.set()
     telemetry.mark_record_end()
 
     audio_samples = len(audio) if audio is not None else None

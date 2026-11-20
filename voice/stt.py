@@ -89,8 +89,17 @@ def transcribe(audio: np.ndarray) -> str:
 
 def transcribe_with_metadata(
     audio: np.ndarray,
+    *,
+    word_timestamps: bool = False,
 ) -> tuple[TranscriptionResult, ModelLoadInfo | None]:
-    """Transcribe and return text plus confidence metadata for audit logs."""
+    """Transcribe and return text plus confidence metadata for audit logs.
+
+    Args:
+        audio: Float32 mono PCM array at the configured sample rate.
+        word_timestamps: If True, faster-whisper returns per-word timestamps
+            and confidence scores inside each segment's ``.words`` list.
+            Defaults to False to preserve existing behaviour.
+    """
     if audio is None or len(audio) == 0:
         return TranscriptionResult(text=""), None
 
@@ -107,7 +116,7 @@ def transcribe_with_metadata(
         beam_size=get_stt_beam_size(),
         vad_filter=get_stt_vad_filter(),
         condition_on_previous_text=get_stt_condition_on_previous_text(),
-        word_timestamps=False,
+        word_timestamps=word_timestamps,
         **prompt_kw,
     )
 
@@ -120,6 +129,21 @@ def transcribe_with_metadata(
     ]
     avg_no_speech = sum(no_speech_probs) / len(no_speech_probs) if no_speech_probs else None
     lang_prob = getattr(info, "language_probability", None)
+
+    # No-speech filter: if Whisper is very confident this is background noise
+    # (avg_no_speech_prob > 0.7) and the recognised text is very short (< 3 words),
+    # treat it as a non-speech frame and return an empty result.
+    # Callers can distinguish this case by checking result.text == "" while
+    # result.avg_no_speech_prob is not None (and > 0.7).
+    if avg_no_speech is not None and avg_no_speech > 0.7 and len(text.split()) < 3:
+        return TranscriptionResult(
+            text="",
+            language_probability=lang_prob,
+            avg_no_speech_prob=avg_no_speech,
+            stt_model=get_stt_model_size(),
+            stt_beam_size=get_stt_beam_size(),
+            audio_duration_sec=round(duration_sec, 3),
+        ), load_info
 
     result = TranscriptionResult(
         text=text,

@@ -27,6 +27,8 @@ from voice.transcript_confirm import (
     RERECORD,
     TranscriptConfidence,
     prompt_transcript_edit,
+    set_force_plain_confirm,
+    should_use_plain_confirm,
 )
 
 if platform.system() == "Windows":
@@ -255,12 +257,28 @@ def capture_and_transcribe(
     )
 
 
+def _apply_confirm_mode(args: argparse.Namespace) -> None:
+    if getattr(args, "plain_confirm", False):
+        set_force_plain_confirm(True)
+    elif getattr(args, "rich_confirm", False):
+        set_force_plain_confirm(False)
+
+
+def _plain_confirm_override(args: argparse.Namespace) -> bool | None:
+    if getattr(args, "plain_confirm", False):
+        return True
+    if getattr(args, "rich_confirm", False):
+        return False
+    return None
+
+
 def run_voice_input(
     stt_model: str | None,
     voice_logger: VoiceLogger | None = None,
     *,
     input_device: int | None = None,
     event_bus: VoiceEventBus | None = None,
+    plain_confirm: bool | None = None,
 ) -> str | None:
     """
     Full voice-input flow: record → STT → show transcript → user edit → confirmed text.
@@ -340,7 +358,11 @@ def run_voice_input(
             avg_no_speech_prob=stt_meta.avg_no_speech_prob if stt_meta else None,
             language_probability=stt_meta.language_probability if stt_meta else None,
         )
-        confirmed = prompt_transcript_edit(cap.raw_text, confidence=confidence)
+        confirmed = prompt_transcript_edit(
+            cap.raw_text,
+            confidence=confidence,
+            plain_confirm=plain_confirm,
+        )
         telemetry.mark_confirm_end()
         telemetry.mark_turn_end()
         _print_telemetry(telemetry)
@@ -352,6 +374,7 @@ def run_voice_input(
                 vlog,
                 input_device=input_device,
                 event_bus=bus,
+                plain_confirm=plain_confirm,
             )
         if confirmed == APPEND:
             print("[VOICE] Append another phrase...")
@@ -360,6 +383,7 @@ def run_voice_input(
                 vlog,
                 input_device=input_device,
                 event_bus=bus,
+                plain_confirm=plain_confirm,
             )
             if extra:
                 merged = f"{cap.raw_text.strip()} {extra.strip()}".strip()
@@ -449,11 +473,20 @@ def run_repl(args: argparse.Namespace) -> int:
         print("Commands: .talk  |  .devices  |  exit")
     print(f"STT model: {args.stt_model or get_stt_model_size()}")
     print(f"Audit log: {_CLI_LOGGER.log_path}")
+    if getattr(args, "plain_confirm", False) or should_use_plain_confirm():
+        print("Confirm: plain input (reliable edit in integrated terminals)")
     print("=" * 60)
+
+    plain = _plain_confirm_override(args)
 
     while True:
         if args.continuous:
-            run_voice_input(args.stt_model, _CLI_LOGGER, input_device=args.device)
+            run_voice_input(
+                args.stt_model,
+                _CLI_LOGGER,
+                input_device=args.device,
+                plain_confirm=plain,
+            )
             continue
         try:
             line = input("\n[VOICE] > ").strip()
@@ -471,7 +504,12 @@ def run_repl(args: argparse.Namespace) -> int:
             print(format_device_list())
             continue
         if lower == ".talk":
-            run_voice_input(args.stt_model, _CLI_LOGGER, input_device=args.device)
+            run_voice_input(
+                args.stt_model,
+                _CLI_LOGGER,
+                input_device=args.device,
+                plain_confirm=plain,
+            )
             continue
 
         print("Unknown command. Use .talk to record, .devices, or exit to quit.")
@@ -515,11 +553,23 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Single .talk cycle then exit (still prompts for edit unless stdin closed)",
     )
+    parser.add_argument(
+        "--plain-confirm",
+        action="store_true",
+        help="Use plain input() for confirm/edit (best in Cursor/VS Code terminal)",
+    )
+    parser.add_argument(
+        "--rich-confirm",
+        action="store_true",
+        help="Force prompt-toolkit editor even in integrated terminals",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    _apply_confirm_mode(args)
+    plain = _plain_confirm_override(args)
     if args.list_devices:
         print(format_device_list())
         return 0
@@ -531,7 +581,12 @@ def main(argv: list[str] | None = None) -> int:
             preload_stt_model(args.stt_model)
             if not args.no_warmup:
                 warmup_stt_model(args.stt_model)
-        run_voice_input(args.stt_model, _CLI_LOGGER, input_device=args.device)
+        run_voice_input(
+            args.stt_model,
+            _CLI_LOGGER,
+            input_device=args.device,
+            plain_confirm=plain,
+        )
         return 0
     return run_repl(args)
 
